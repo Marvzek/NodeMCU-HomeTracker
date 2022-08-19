@@ -43,7 +43,7 @@ void loop()
   y = sin(CurrentPointLongitudeRad - EssingenLongitudeRad) * cos(CurrentPointLatitudeRad);
   x = cos(EssingenLatitudeRad) * sin(CurrentPointLatitudeRad) - sin(EssingenLatitudeRad) * cos(CurrentPointLatitudeRad) * cos(CurrentPointLongitudeRad - EssingenLongitudeRad);
   Theta = atan2(y, x);
-  Bearing = (Theta * 180.0 / PI + 360) % 360; // in degrees
-
+  Bearing = fmodf((Theta * 180.0 / PI + 360.0),360) ; // in degrees
+  Serial.println((String) "Bearing=" + Bearing);
   delay(1000);
 }
