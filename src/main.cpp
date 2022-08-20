@@ -1,37 +1,16 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 #include <TinyGPS++.h>
+#include <Wire.h>        // Only needed for Arduino 1.6.5 and earlier
+#include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"`
 
-const int EarthRadius = 6371000;
 const float EssingenLatitudeDeg = 48.7907211;
 const float EssingenLongitudeDeg = 9.9525687;
-
-const float EssingenLatitudeRad = EssingenLatitudeDeg * DEG_TO_RAD;
-const float EssingenLongitudeRad = EssingenLongitudeDeg * DEG_TO_RAD;
-
-float CurrentPointLatitudeDeg = 48.4241634;
-float CurrentPointLongitudeDeg = 10.0316937;
-
-float CurrentPointLatitudeRad = CurrentPointLatitudeDeg * DEG_TO_RAD;
-float CurrentPointLongitudeRad = CurrentPointLongitudeDeg * DEG_TO_RAD;
-
-float DeltaPhi = 0.0;
-float DeltaLambda = 0.0;
-
-float a, c, Distance;
-float y, x, Theta, Bearing;
 
 TinyGPSPlus gps;
 SoftwareSerial SerialGPS(D7, D6); // RX, TX
 
-float Latitude, Longitude;
-int year, month, date, hour, minute, second;
-String DateString, TimeString, LatitudeString, LongitudeString;
-
-float calcDistance();
-float calcBearing();
-
-int readGPS();
+SSD1306Wire display(0x3c, D5, D4); // ADDRESS, SDA, SCL
 
 void setup()
 {
@@ -39,8 +18,15 @@ void setup()
   Serial.println("Booting");
 
   SerialGPS.begin(9600);
-}
 
+  display.init();
+  display.clear();
+  // display.invertDisplay();
+  display.flipScreenVertically();
+  display.setFont(ArialMT_Plain_24);
+  display.drawString(0, 26, "Hello world");
+  display.display();
+}
 void loop()
 {
 
@@ -60,16 +46,23 @@ void loop()
         gps.distanceBetween(gps.location.lat(), gps.location.lng(), EssingenLatitudeDeg, EssingenLongitudeDeg) / 1000.0;
     double courseTo =
         gps.courseTo(gps.location.lat(), gps.location.lng(), EssingenLatitudeDeg, EssingenLongitudeDeg);
-    Serial.print("Distance (km) to Eiffel Tower: ");
+    Serial.print("Entfernung nach Essingen: ");
     Serial.print(distanceKm);
-    Serial.print("Course to Eiffel Tower: ");
+    Serial.print("Kurs: ");
     Serial.println(courseTo);
 
+    //display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
+    display.setFont(ArialMT_Plain_10);
+
+    display.clear();
+    display.drawString(0, 20, (String)distanceKm);
+    display.display();
+
     // readGPS();
-    delay(1000);
+    // delay(1000);
   }
 }
-
+/*
 float calcDistance()
 {
   // put your main code here, to run repeatedly:
@@ -116,3 +109,4 @@ int readGPS()
   }
   return 1;
 }
+*/
