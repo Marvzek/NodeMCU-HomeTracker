@@ -1,24 +1,42 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 #include <TinyGPS++.h>
-#include <Wire.h>        // Only needed for Arduino 1.6.5 and earlier
-#include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"`
+#include <Wire.h>
+#include "SSD1306Wire.h"
+#include <DFRobot_QMC5883.h>
+#include "images.h"
 
-const float EssingenLatitudeDeg = 48.7907211;
-const float EssingenLongitudeDeg = 9.9525687;
+// REAL DISTANCE
+// const float EssingenLatitudeDeg = 48.7907211;
+// const float EssingenLongitudeDeg = 9.9525687;
+
+// TEST Greatest Distance
+// const float EssingenLatitudeDeg = -48.7907211;
+// const float EssingenLongitudeDeg = -169.9525687;
+
+// TEST within 10 km
+const float EssingenLatitudeDeg = 48.4039701;
+const float EssingenLongitudeDeg = 9.9271;
 
 TinyGPSPlus gps;
 SoftwareSerial SerialGPS(D7, D6); // RX, TX
 
-SSD1306Wire display(0x3c, D5, D4); // ADDRESS, SDA, SCL
+// //Scanning...
+// //I2C device found at address 0x1E  !
+// //I2C device found at address 0x3C  !
 
+SSD1306Wire display(0x3C, D2, D1); // ADDRESS, SDA, SCL
+DFRobot_QMC5883 compass(&Wire, 0x1E);
+double Distance, CourseTo;
+int Satellites = 0;
 void setup()
 {
-  Serial.begin(9600);
-  Serial.println("Booting");
+  // Serial.begin(9600);
+  // Serial.println("Booting");
 
   SerialGPS.begin(9600);
 
+  Wire.begin(D2, D1);
   display.init();
   display.clear();
   // display.invertDisplay();
@@ -26,6 +44,17 @@ void setup()
   display.setFont(ArialMT_Plain_24);
   display.drawString(0, 26, "Hello world");
   display.display();
+  int i = 0;
+  while (!compass.begin())
+  {
+    // Serial.println("Could not find a valid 5883 sensor, check wiring!");
+    display.clear();
+    display.setFont(ArialMT_Plain_10);
+    display.drawString(0, 16, (String) "No Compass " + i);
+    i++;
+    display.display();
+    delay(500);
+  }
 }
 void loop()
 {
@@ -35,78 +64,143 @@ void loop()
 
   if (gps.location.isUpdated())
   {
-    Serial.print("LAT=");
-    Serial.print(gps.location.lat(), 6);
-    Serial.print("LNG=");
-    Serial.print(gps.location.lng(), 6);
-    Serial.print("Sat=");
-    Serial.print(gps.satellites.value());
-    Serial.print("Distance=");
-    double distanceKm =
-        gps.distanceBetween(gps.location.lat(), gps.location.lng(), EssingenLatitudeDeg, EssingenLongitudeDeg) / 1000.0;
-    double courseTo =
-        gps.courseTo(gps.location.lat(), gps.location.lng(), EssingenLatitudeDeg, EssingenLongitudeDeg);
-    Serial.print("Entfernung nach Essingen: ");
-    Serial.print(distanceKm);
-    Serial.print("Kurs: ");
-    Serial.println(courseTo);
-
-    //display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
-    display.setFont(ArialMT_Plain_10);
-
-    display.clear();
-    display.drawString(0, 20, (String)distanceKm);
-    display.display();
+    // Serial.print("LAT=");
+    // Serial.print(gps.location.lat(), 6);
+    // Serial.print("LNG=");
+    // Serial.print(gps.location.lng(), 6);
+    // Serial.print("Sat=");
+    // Serial.print(gps.satellites.value());
+    // Serial.print("Distance=");
+    Distance = gps.distanceBetween(gps.location.lat(), gps.location.lng(), EssingenLatitudeDeg, EssingenLongitudeDeg);
+    CourseTo = gps.courseTo(gps.location.lat(), gps.location.lng(), EssingenLatitudeDeg, EssingenLongitudeDeg);
+    Satellites = gps.satellites.value();
+    // Serial.print("Entfernung nach Essingen: ");
+    // Serial.print(Distance);
+    // Serial.print("Kurs: ");
+    // Serial.println(CourseTo);
 
     // readGPS();
     // delay(1000);
   }
-}
-/*
-float calcDistance()
-{
-  // put your main code here, to run repeatedly:
+  /**
+   * @brief  Set declination angle on your location and fix heading
+   * @n      You can find your declination on: http://magnetic-declination.com/
+   * @n      (+) Positive or (-) for negative
+   * @n      For Bytom / Poland declination angle is 4'26E (positive)
+   * @n      Formula: (deg + (min / 60.0)) / (180 / PI);
+   */
+  float declinationAngle = (4.0 + (26.0 / 60.0)) / (180 / PI);
+  compass.setDeclinationAngle(declinationAngle);
+  sVector_t mag = compass.readRaw();
+  compass.getHeadingDegrees();
+  // Serial.print("X:");
+  // Serial.print(mag.XAxis);
+  // Serial.print(" Y:");
+  // Serial.print(mag.YAxis);
+  // Serial.print(" Z:");
+  // Serial.println(mag.ZAxis);
+  // Serial.print("Degress = ");
+  // Serial.println(mag.HeadingDegress);
+  // delay(100);
+  display.setFont(ArialMT_Plain_16);
+  display.clear();
 
-  DeltaPhi = (CurrentPointLatitudeDeg - EssingenLatitudeDeg) * DEG_TO_RAD;
-  DeltaLambda = (CurrentPointLongitudeDeg - EssingenLongitudeDeg) * DEG_TO_RAD;
-  // a = sin²(Δφ/2) + cos φ1 ⋅ cos φ2 ⋅ sin²(Δλ/2)
-  a = sin(DeltaPhi / 2.0) * sin(DeltaPhi / 2.0) + cos(EssingenLatitudeRad) * cos(CurrentPointLatitudeRad) * sin(DeltaLambda / 2.0) * sin(DeltaLambda / 2.0);
-  c = 2 * atan2(sqrt(a), sqrt(1.0 - a));
-
-  Distance = EarthRadius * c; // in metres
-
-  Serial.println((String) "Distance=" + Distance);
-  return 0.0;
-}
-
-float calcBearing()
-{
-  // 	θ = atan2( sin Δλ ⋅ cos φ2 , cos φ1 ⋅ sin φ2 − sin φ1 ⋅ cos φ2 ⋅ cos Δλ )
-  // phi = latitude
-  // lambda = longitude
-
-  y = sin(CurrentPointLongitudeRad - EssingenLongitudeRad) * cos(CurrentPointLatitudeRad);
-  x = cos(EssingenLatitudeRad) * sin(CurrentPointLatitudeRad) - sin(EssingenLatitudeRad) * cos(CurrentPointLatitudeRad) * cos(CurrentPointLongitudeRad - EssingenLongitudeRad);
-  Theta = atan2(y, x);
-  Bearing = fmodf((Theta * 180.0 / PI + 360.0), 360); // in degrees
-  Serial.println((String) "Bearing=" + Bearing);
-  return 0.0;
-}
-
-int readGPS()
-{
-  //$GPGGA,214839.00,4826.24617,N,01003.12259,E,1,06,3.11,438.3,M,47.6,M,,*54
-  //$
-
-  char msg[300];
-  bool continueReading = true;
-
-  int writePosition = 0;
-
-  for (int i = 0; i < 1000; i++)
+  if (Satellites < 1)
   {
-    Serial.write(SerialGPS.read());
+    if ((millis() / 500) % 2)
+    {
+      display.drawXbm(102, 0, Satellite_width, Satellite_height, Satellite_bits);
+    }
   }
-  return 1;
+  else
+  {
+    display.drawXbm(102, 0, 16, 16, Satellite_bits);
+  }
+
+  display.drawString(120, 0, (String)Satellites);
+
+  int distanceX = 128;
+  int distanceY = 20;
+  int distanceUnitX = 128;
+  int distanceUnitY = 46;
+
+  int tempDistance = 0;
+
+  if (Distance < 9999.9)
+  {
+    tempDistance = Distance;
+    display.setFont(ArialMT_Plain_24);
+    display.setTextAlignment(TEXT_ALIGN_RIGHT);
+    display.drawString(distanceX, distanceY, (String)tempDistance);
+    display.setFont(ArialMT_Plain_16);
+    display.drawString(distanceUnitX, distanceUnitY, "[m]");
+    display.setTextAlignment(TEXT_ALIGN_LEFT);
+  }
+
+  else if (Distance > 9999.9)
+  {
+    tempDistance = Distance / 1000;
+    display.setFont(ArialMT_Plain_24);
+    display.setTextAlignment(TEXT_ALIGN_RIGHT);
+    display.drawString(distanceX, distanceY, (String)tempDistance);
+    display.setFont(ArialMT_Plain_16);
+    display.drawString(distanceUnitX, distanceUnitY, "[km]");
+    display.setTextAlignment(TEXT_ALIGN_LEFT);
+  }
+
+  int circleX = 36;
+  int circleY = 32;
+  int circleRadius = 31;
+  int smallCircleRadiusHi = 20;
+  int smallCircleRadiusLo = 5;
+
+  display.drawCircle(circleX, circleY, circleRadius);
+  if (Satellites < 1)
+  {
+
+    display.fillCircle(circleX, circleY, smallCircleRadiusLo + ((((millis() + 500) % 1500) / 1500.0) * (smallCircleRadiusHi - smallCircleRadiusLo)));
+  }
+  else
+  {
+
+    double headingDiffMargin = 5.0;
+    double headingDiff = mag.HeadingDegress - CourseTo;
+    headingDiff += 90;
+    headingDiff = fmod(headingDiff,360);
+    
+    if (abs(headingDiff) <= headingDiffMargin)
+    {
+      display.invertDisplay();
+    }
+    else
+    {
+      display.normalDisplay();
+    }
+    display.setFont(ArialMT_Plain_10);
+
+    int angleOffset = 120;
+    int radius1 = 25;
+    int radius2 = 15;
+
+    display.fillTriangle(
+        circleX + radius1 * cos(headingDiff * DEG_TO_RAD),
+        circleY + radius1 * sin(headingDiff * DEG_TO_RAD),
+        circleX + radius2 * cos((headingDiff - angleOffset) * DEG_TO_RAD),
+        circleY + radius2 * sin((headingDiff - angleOffset) * DEG_TO_RAD),
+        circleX + radius2 * cos((headingDiff + angleOffset) * DEG_TO_RAD),
+        circleY + radius2 * sin((headingDiff + angleOffset) * DEG_TO_RAD));
+
+    display.drawLine(circleX, circleY, circleX + radius1 * cos(headingDiff * DEG_TO_RAD), circleY + radius1 * sin(headingDiff * DEG_TO_RAD));
+    display.drawLine(circleX, circleY, circleX + radius2 * cos((headingDiff - angleOffset) * DEG_TO_RAD), circleY + radius2 * sin((headingDiff - angleOffset) * DEG_TO_RAD));
+    display.drawLine(circleX, circleY, circleX + radius2 * cos((headingDiff + angleOffset) * DEG_TO_RAD), circleY + radius2 * sin((headingDiff + angleOffset) * DEG_TO_RAD));
+
+    display.drawString(70, 54, (String)headingDiff);
+  }
+
+  // display.drawString(0, 40, (String)mag.HeadingDegress);
+
+  // display.drawString(0, 40, (String)CourseTo);
+  display.display();
+
+  // delay(100);
 }
-*/
