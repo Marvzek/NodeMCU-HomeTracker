@@ -7,16 +7,17 @@
 #include "images.h"
 
 // REAL DISTANCE
-// const float EssingenLatitudeDeg = 48.7907211;
-// const float EssingenLongitudeDeg = 9.9525687;
+const float EssingenLatitudeDeg = 48.80833333;
+const float EssingenLongitudeDeg = 10.0225;
+
 
 // TEST Greatest Distance
 // const float EssingenLatitudeDeg = -48.7907211;
 // const float EssingenLongitudeDeg = -169.9525687;
 
 // TEST within 10 km
-const float EssingenLatitudeDeg = 48.4039701;
-const float EssingenLongitudeDeg = 9.9271;
+//const float EssingenLatitudeDeg = 48.4039701;
+//const float EssingenLongitudeDeg = 9.9271;
 
 TinyGPSPlus gps;
 SoftwareSerial SerialGPS(D7, D6); // RX, TX
@@ -40,7 +41,7 @@ void setup()
   display.init();
   display.clear();
   // display.invertDisplay();
-  display.flipScreenVertically();
+  //display.flipScreenVertically();
   display.setFont(ArialMT_Plain_24);
   display.drawString(0, 26, "Hello world");
   display.display();
@@ -155,6 +156,9 @@ void loop()
   int smallCircleRadiusLo = 5;
 
   display.drawCircle(circleX, circleY, circleRadius);
+  display.drawLine(circleX, 0, circleX, 6);
+  display.drawLine(circleX +1, 0, circleX+1, 6);
+  display.drawLine(circleX -1, 0, circleX-1, 6);
   if (Satellites < 1)
   {
 
@@ -194,7 +198,7 @@ void loop()
     display.drawLine(circleX, circleY, circleX + radius2 * cos((headingDiff - angleOffset) * DEG_TO_RAD), circleY + radius2 * sin((headingDiff - angleOffset) * DEG_TO_RAD));
     display.drawLine(circleX, circleY, circleX + radius2 * cos((headingDiff + angleOffset) * DEG_TO_RAD), circleY + radius2 * sin((headingDiff + angleOffset) * DEG_TO_RAD));
 
-    display.drawString(70, 54, (String)headingDiff);
+    //display.drawString(70, 54, (String)headingDiff);
   }
 
   // display.drawString(0, 40, (String)mag.HeadingDegress);
