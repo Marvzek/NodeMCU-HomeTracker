@@ -74,6 +74,7 @@ void loop()
     // Serial.print("Distance=");
     Distance = gps.distanceBetween(gps.location.lat(), gps.location.lng(), EssingenLatitudeDeg, EssingenLongitudeDeg);
     CourseTo = gps.courseTo(gps.location.lat(), gps.location.lng(), EssingenLatitudeDeg, EssingenLongitudeDeg);
+    
     Satellites = gps.satellites.value();
     // Serial.print("Entfernung nach Essingen: ");
     // Serial.print(Distance);
@@ -169,7 +170,7 @@ void loop()
 
     double headingDiffMargin = 5.0;
     double headingDiff = mag.HeadingDegress - CourseTo;
-    headingDiff += 90;
+    headingDiff += 180;
     headingDiff = fmod(headingDiff,360);
     
     if (abs(headingDiff) <= headingDiffMargin)
@@ -185,25 +186,26 @@ void loop()
     int angleOffset = 120;
     int radius1 = 25;
     int radius2 = 15;
-
+    double tempHeadingDiff = headingDiff+180.0;
     display.fillTriangle(
-        circleX + radius1 * cos(headingDiff * DEG_TO_RAD),
-        circleY + radius1 * sin(headingDiff * DEG_TO_RAD),
-        circleX + radius2 * cos((headingDiff - angleOffset) * DEG_TO_RAD),
-        circleY + radius2 * sin((headingDiff - angleOffset) * DEG_TO_RAD),
-        circleX + radius2 * cos((headingDiff + angleOffset) * DEG_TO_RAD),
-        circleY + radius2 * sin((headingDiff + angleOffset) * DEG_TO_RAD));
+        circleX + radius1 * cos(tempHeadingDiff * DEG_TO_RAD),
+        circleY + radius1 * sin(tempHeadingDiff * DEG_TO_RAD),
+        circleX + radius2 * cos((tempHeadingDiff - angleOffset) * DEG_TO_RAD),
+        circleY + radius2 * sin((tempHeadingDiff - angleOffset) * DEG_TO_RAD),
+        circleX + radius2 * cos((tempHeadingDiff + angleOffset) * DEG_TO_RAD),
+        circleY + radius2 * sin((tempHeadingDiff + angleOffset) * DEG_TO_RAD));
 
-    display.drawLine(circleX, circleY, circleX + radius1 * cos(headingDiff * DEG_TO_RAD), circleY + radius1 * sin(headingDiff * DEG_TO_RAD));
-    display.drawLine(circleX, circleY, circleX + radius2 * cos((headingDiff - angleOffset) * DEG_TO_RAD), circleY + radius2 * sin((headingDiff - angleOffset) * DEG_TO_RAD));
-    display.drawLine(circleX, circleY, circleX + radius2 * cos((headingDiff + angleOffset) * DEG_TO_RAD), circleY + radius2 * sin((headingDiff + angleOffset) * DEG_TO_RAD));
+    display.drawLine(circleX, circleY, circleX + radius1 * cos(tempHeadingDiff * DEG_TO_RAD), circleY + radius1 * sin(tempHeadingDiff * DEG_TO_RAD));
+    display.drawLine(circleX, circleY, circleX + radius2 * cos((tempHeadingDiff - angleOffset) * DEG_TO_RAD), circleY + radius2 * sin((tempHeadingDiff - angleOffset) * DEG_TO_RAD));
+    display.drawLine(circleX, circleY, circleX + radius2 * cos((tempHeadingDiff + angleOffset) * DEG_TO_RAD), circleY + radius2 * sin((tempHeadingDiff + angleOffset) * DEG_TO_RAD));
 
     //display.drawString(70, 54, (String)headingDiff);
   }
 
-  // display.drawString(0, 40, (String)mag.HeadingDegress);
+   //display.drawString(0, 40, (String)mag.HeadingDegress);
 
-  // display.drawString(0, 40, (String)CourseTo);
+  //display.drawString(70, 0, (String)CourseTo);
+  
   display.display();
 
   // delay(100);
