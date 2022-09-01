@@ -6,18 +6,18 @@
 #include <DFRobot_QMC5883.h>
 #include "images.h"
 
+bool Debug = false;
 // REAL DISTANCE
 const float EssingenLatitudeDeg = 48.80833333;
 const float EssingenLongitudeDeg = 10.0225;
-
 
 // TEST Greatest Distance
 // const float EssingenLatitudeDeg = -48.7907211;
 // const float EssingenLongitudeDeg = -169.9525687;
 
 // TEST within 10 km
-//const float EssingenLatitudeDeg = 48.4039701;
-//const float EssingenLongitudeDeg = 9.9271;
+// const float EssingenLatitudeDeg = 48.4039701;
+// const float EssingenLongitudeDeg = 9.9271;
 
 TinyGPSPlus gps;
 SoftwareSerial SerialGPS(D7, D6); // RX, TX
@@ -41,7 +41,7 @@ void setup()
   display.init();
   display.clear();
   // display.invertDisplay();
-  //display.flipScreenVertically();
+  // display.flipScreenVertically();
   display.setFont(ArialMT_Plain_24);
   display.drawString(0, 26, "Hello world");
   display.display();
@@ -74,7 +74,7 @@ void loop()
     // Serial.print("Distance=");
     Distance = gps.distanceBetween(gps.location.lat(), gps.location.lng(), EssingenLatitudeDeg, EssingenLongitudeDeg);
     CourseTo = gps.courseTo(gps.location.lat(), gps.location.lng(), EssingenLatitudeDeg, EssingenLongitudeDeg);
-    
+
     Satellites = gps.satellites.value();
     // Serial.print("Entfernung nach Essingen: ");
     // Serial.print(Distance);
@@ -91,7 +91,7 @@ void loop()
    * @n      For Bytom / Poland declination angle is 4'26E (positive)
    * @n      Formula: (deg + (min / 60.0)) / (180 / PI);
    */
-  float declinationAngle = (4.0 + (26.0 / 60.0)) / (180 / PI);
+  float declinationAngle = 0.0; // (4.0 + (26.0 / 60.0)) / (180 / PI);
   compass.setDeclinationAngle(declinationAngle);
   sVector_t mag = compass.readRaw();
   compass.getHeadingDegrees();
@@ -158,8 +158,8 @@ void loop()
 
   display.drawCircle(circleX, circleY, circleRadius);
   display.drawLine(circleX, 0, circleX, 6);
-  display.drawLine(circleX +1, 0, circleX+1, 6);
-  display.drawLine(circleX -1, 0, circleX-1, 6);
+  display.drawLine(circleX + 1, 0, circleX + 1, 6);
+  display.drawLine(circleX - 1, 0, circleX - 1, 6);
   if (Satellites < 1)
   {
 
@@ -170,9 +170,9 @@ void loop()
 
     double headingDiffMargin = 5.0;
     double headingDiff = mag.HeadingDegress - CourseTo;
-    headingDiff += 180;
-    headingDiff = fmod(headingDiff,360);
-    
+    // headingDiff += 180;
+    headingDiff = fmod(headingDiff, 360);
+
     if (abs(headingDiff) <= headingDiffMargin)
     {
       display.invertDisplay();
@@ -186,7 +186,7 @@ void loop()
     int angleOffset = 120;
     int radius1 = 25;
     int radius2 = 15;
-    double tempHeadingDiff = headingDiff+180.0;
+    double tempHeadingDiff = headingDiff + 270.0;
     display.fillTriangle(
         circleX + radius1 * cos(tempHeadingDiff * DEG_TO_RAD),
         circleY + radius1 * sin(tempHeadingDiff * DEG_TO_RAD),
@@ -199,13 +199,19 @@ void loop()
     display.drawLine(circleX, circleY, circleX + radius2 * cos((tempHeadingDiff - angleOffset) * DEG_TO_RAD), circleY + radius2 * sin((tempHeadingDiff - angleOffset) * DEG_TO_RAD));
     display.drawLine(circleX, circleY, circleX + radius2 * cos((tempHeadingDiff + angleOffset) * DEG_TO_RAD), circleY + radius2 * sin((tempHeadingDiff + angleOffset) * DEG_TO_RAD));
 
-    //display.drawString(70, 54, (String)headingDiff);
+    if (Debug)
+    {
+      display.drawString(70, 54, (String)headingDiff);
+    }
   }
 
-   //display.drawString(0, 40, (String)mag.HeadingDegress);
+  if (Debug)
+  {
+    display.drawString(0, 40, (String)mag.HeadingDegress);
 
-  //display.drawString(70, 0, (String)CourseTo);
-  
+    display.drawString(70, 0, (String)CourseTo);
+  }
+
   display.display();
 
   // delay(100);
